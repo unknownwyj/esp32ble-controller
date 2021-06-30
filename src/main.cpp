@@ -2,16 +2,17 @@
 #include <BleKeyboard.h>
 #include <EEPROM.h>
 int buttonr = 0;         // current state of the button
-int lastbuttonr = 0;     // previous state of the button
+int lastbuttonr = 1;     // previous state of the button
 int buttonl = 0;         // current state of the button
-int lastbuttonl = 0;     // previous state of the button
+int lastbuttonl = 1;     // previous state of the button
 int buttonm = 0;
-int lastbuttonm = 0;
+int lastbuttonm = 1;
 int interval=120000;
-int modes = 0;
+RTC_DATA_ATTR int modes = 0;
 int pic = 0;
-#define BUTTON_PIN_BITMASK 0x2002000
-#define Buttonr 13
+
+#define BUTTON_PIN_BITMASK 0x402000000
+#define Buttonr 34
 #define Buttonl 25
 #define Buttonm 23
 uint8_t leftsetting[] ={0xD8,0xD7};
@@ -20,11 +21,12 @@ BleKeyboard bleKeyboard("Manga buttoner","Magical tools",100);
 unsigned long previousMillis=0;
 void buttonmodes(int which,bool Leftright);
 void setup() {
+  Serial.begin(9600);
   EEPROM.begin(24);
-  setCpuFrequencyMhz(80);
+  setCpuFrequencyMhz(240);
   esp_sleep_enable_ext1_wakeup(BUTTON_PIN_BITMASK,ESP_EXT1_WAKEUP_ANY_HIGH);
-  pinMode(Buttonl,INPUT_PULLUP);
-  pinMode(Buttonr,INPUT_PULLUP);
+  pinMode(Buttonl,INPUT);
+  pinMode(Buttonr,INPUT);
   pinMode(Buttonm,INPUT_PULLUP);
   /*EEPROM.write(0,KEY_LEFT_ARROW);
   EEPROM.write(1,KEY_RIGHT_ARROW);
@@ -45,7 +47,7 @@ void loop() {
       // It's time to do something!
       previousMillis = currentMillis;
       Serial.println("Entering Deep Sleep");
-      //esp_deep_sleep_start();
+      esp_deep_sleep_start();
    }
   buttonl = digitalRead(Buttonl);
   buttonr = digitalRead(Buttonr);
