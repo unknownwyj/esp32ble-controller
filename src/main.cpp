@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <BleKeyboard.h>
 #include <EEPROM.h>
+
+#define BatteryMonitorPin 35 // Battery Monitoring Pin for TTGO T8
+
 int buttonr = 0;         // current state of the button
 int lastbuttonr = 1;     // previous state of the button
 int buttonl = 0;         // current state of the button
@@ -18,7 +21,7 @@ int pic = 0;
 uint8_t leftsetting[] ={0xD8,0xD7};
 uint8_t rightsetting[] ={0xD7,0xD8};
 
-BleKeyboard bleKeyboard("Manga buttoner","Magical tools",100);
+BleKeyboard bleKeyboard("Manga buttoner","Magical tools");
 unsigned long previousMillis=0;
 void buttonmodes(int which,bool Leftright);
 uint8_t convertinttokey(int keyselect);
@@ -50,6 +53,37 @@ void recvWithEndMarker() {
         }
     }
 }
+void updateBattery(){
+  double v = analogRead(BatteryMonitorPin);
+  Serial.println(v);
+  v = (v/(double)4096) * (double)7.488;
+  Serial.println(v);
+  long va = (long)(v*1000);
+  int BatteryLevel;
+  if (v > 4.2){
+    BatteryLevel = 100;
+  }
+  else if (v > 4.1){
+    BatteryLevel = map(va,4100,4200,91,100);
+  }
+  else if (v > 4){
+    BatteryLevel = map(va,4000,4100,78,91);
+  }
+  else if (v > 3.9){
+    BatteryLevel = map(va,3900,4000,60,78);
+  }
+  else if (v > 3.8){
+    BatteryLevel = map(va,3800,3900,41,60);
+  }
+  else if (v > 3.7){
+    BatteryLevel = map(va,3700,3800,10,41);
+  }
+  else if (v > 3.6){
+    BatteryLevel = map(va,3600,3700,0,10);
+  }
+  Serial.println(BatteryLevel);
+  bleKeyboard.setBatteryLevel(BatteryLevel);
+}
 void setup() {
   Serial.begin(230400);
   EEPROM.begin(24);
@@ -58,6 +92,7 @@ void setup() {
   pinMode(Buttonl,INPUT);
   pinMode(Buttonr,INPUT);
   pinMode(Buttonm,INPUT_PULLUP);
+  pinMode(BatteryMonitorPin,INPUT);
   /*EEPROM.write(0,KEY_LEFT_ARROW);
   EEPROM.write(1,KEY_RIGHT_ARROW);
   EEPROM.write(2,KEY_RIGHT_ARROW);
@@ -195,6 +230,7 @@ void loop() {
   lastbuttonm = buttonm;
 }
 void buttonmodes(int which,bool Leftright){
+  updateBattery();
   if(Leftright == 0){
     switch (which){
       case 0:
